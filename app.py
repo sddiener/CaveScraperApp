@@ -1,3 +1,6 @@
+import os
+import pdfkit  # To convert HTML to PDF
+from jinja2 import Environment, FileSystemLoader
 import streamlit as st
 from src.csw_scraper import fetch_cave_info
 
@@ -53,3 +56,44 @@ if st.button("Fetch Cave Info"):
             st.error("Failed to fetch cave info. Please check the URL.")
     else:
         st.warning("Please enter a URL.")
+
+
+# Load Jinja2 template
+env = Environment(loader=FileSystemLoader('templates'))
+template = env.get_template('a5_template.html')
+
+# Cave Info Example
+cave_info = {
+    'cave_name': 'Ogof Gofan',
+    'overview': 'This is an overview of Ogof Gofan.',
+    'description': 'A description of the cave.',
+    'trip_suggestions': 'Suggestions for trips to Ogof Gofan.',
+    'warnings': 'Some warnings.',
+    'access': 'Access details.'
+}
+
+# User input for selecting sections
+st.title("Cave Info A5 Formatter")
+
+sections_to_include = {
+    'overview': st.checkbox('Include Overview', value=True),
+    'description': st.checkbox('Include Description', value=True),
+    'trip_suggestions': st.checkbox('Include Trip Suggestions', value=True),
+    'warnings': st.checkbox('Include Warnings', value=True),
+    'access': st.checkbox('Include Access Details', value=True)
+}
+
+if st.button("Generate A5 PDF"):
+    # Filter selected sections for Jinja2
+    filtered_info = {k: cave_info[k] for k, v in sections_to_include.items() if v}
+
+    # Render the HTML content using Jinja2
+    rendered_html = template.render(**filtered_info)
+
+    # Convert to PDF (you'll need wkhtmltopdf installed)
+    pdf_output_path = "output.pdf"
+    pdfkit.from_string(rendered_html, pdf_output_path)
+
+    # Display the PDF as a download button
+    with open(pdf_output_path, 'rb') as pdf_file:
+        st.download_button("Download A5 PDF", data=pdf_file, file_name="cave_info_a5.pdf")
