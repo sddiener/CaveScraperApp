@@ -1,0 +1,26 @@
+autopep8==2.3.1
+black==24.10.0
+-e git+ssh://git@github.com/sddiener/CaveScraperApp.git@07247c74bd4fb62309fe6f155337af46f1a78ed5#egg=CaveScraperApp
+cfgv==3.4.0
+click==8.1.7
+distlib==0.3.9
+filelock==3.16.1
+flake8==7.1.1
+identify==2.6.1
+iniconfig==2.0.0
+isort==5.13.2
+mccabe==0.7.0
+mypy==1.12.0
+mypy-extensions==1.0.0
+nodeenv==1.9.1
+packaging==24.1
+pathspec==0.12.1
+platformdirs==4.3.6
+pluggy==1.5.0
+pre_commit==4.0.1
+pycodestyle==2.12.1
+pyflakes==3.2.0
+pytest==8.3.3
+PyYAML==6.0.2
+typing_extensions==4.12.2
+virtualenv==20.26.6
