@@ -1,6 +1,6 @@
 autopep8==2.3.1
 black==24.10.0
--e git+ssh://git@github.com/sddiener/CaveScraperApp.git@07247c74bd4fb62309fe6f155337af46f1a78ed5#egg=CaveScraperApp
+-e git+ssh://git@github.com/sddiener/CaveScraperApp.git@f2fb301404926ddb8135f6fd1df926d51269949a#egg=CaveScraperApp
 cfgv==3.4.0
 click==8.1.7
 distlib==0.3.9
