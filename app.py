@@ -1,22 +1,26 @@
-import os
-import pdfkit  # To convert HTML to PDF
+import pdfkit
 from jinja2 import Environment, FileSystemLoader
 import streamlit as st
-from src.csw_scraper import fetch_cave_info
+from src.csw_scraper import fetch_cave_info, CaveInfo  # Assuming CaveInfo is your dataclass
 
 # Streamlit app for scraping cave info
-
 st.title("Cave Info Scraper")
 
 # Input field for URL
 url = st.text_input("Enter the Cave Info URL:", "")
 
+# Use session state to persist cave_info across interactions
+if "cave_info" not in st.session_state:
+    st.session_state.cave_info = None
+
+# Button to fetch cave info
 if st.button("Fetch Cave Info"):
     if url:
         # Fetch cave info from the provided URL
         cave_info = fetch_cave_info(url)
 
-        if cave_info.name:
+        if cave_info and cave_info.name:
+            st.session_state.cave_info = cave_info  # Store in session state
             st.success(f"Successfully fetched data for: {cave_info.name}")
 
             # Display cave info sections
@@ -57,43 +61,51 @@ if st.button("Fetch Cave Info"):
     else:
         st.warning("Please enter a URL.")
 
+# Only show the next section if cave_info has been successfully fetched
+if st.session_state.cave_info:
+    cave_info = st.session_state.cave_info  # Retrieve from session state
 
-# Load Jinja2 template
-env = Environment(loader=FileSystemLoader('templates'))
-template = env.get_template('a5_template.html')
+    # Set up the environment for Jinja2
+    env = Environment(loader=FileSystemLoader('templates'))
+    template = env.get_template('a5_template.html')
 
-# Cave Info Example
-cave_info = {
-    'cave_name': 'Ogof Gofan',
-    'overview': 'This is an overview of Ogof Gofan.',
-    'description': 'A description of the cave.',
-    'trip_suggestions': 'Suggestions for trips to Ogof Gofan.',
-    'warnings': 'Some warnings.',
-    'access': 'Access details.'
-}
+    # User input for selecting sections
+    st.title("Cave Info A5 Formatter")
 
-# User input for selecting sections
-st.title("Cave Info A5 Formatter")
+    sections_to_include = {
+        'overview': st.checkbox('Include Overview', value=True),
+        'history': st.checkbox('Include History', value=False),
+        'location': st.checkbox('Include Location', value=True),
+        'access': st.checkbox('Include Access Details', value=True),
+        'description': st.checkbox('Include Description', value=True),
+        'warnings': st.checkbox('Include Warnings', value=True),
+        'tackle': st.checkbox('Include Tackle', value=True),
+    }
 
-sections_to_include = {
-    'overview': st.checkbox('Include Overview', value=True),
-    'description': st.checkbox('Include Description', value=True),
-    'trip_suggestions': st.checkbox('Include Trip Suggestions', value=True),
-    'warnings': st.checkbox('Include Warnings', value=True),
-    'access': st.checkbox('Include Access Details', value=True)
-}
-
-if st.button("Generate A5 PDF"):
     # Filter selected sections for Jinja2
-    filtered_info = {k: cave_info[k] for k, v in sections_to_include.items() if v}
+    filtered_info = {
+        'cave_name': cave_info.name,
+        'overview': cave_info.overview if sections_to_include['overview'] else '',
+        'history': cave_info.history if sections_to_include['history'] else '',
+        'location': cave_info.location if sections_to_include['location'] else '',
+        'access': cave_info.access if sections_to_include['access'] else '',
+        'description': cave_info.description if sections_to_include['description'] else '',
+        'warnings': cave_info.warnings if sections_to_include['warnings'] else '',
+        'tackle': cave_info.tackle if sections_to_include['tackle'] else '',
+    }
 
     # Render the HTML content using Jinja2
     rendered_html = template.render(**filtered_info)
 
-    # Convert to PDF (you'll need wkhtmltopdf installed)
-    pdf_output_path = "output.pdf"
-    pdfkit.from_string(rendered_html, pdf_output_path)
+    # Convert to PDF and provide download link
+    if st.button("Generate A4 PDF"):
+        try:
+            pdf_output_path = "output.pdf"
+            # Try generating the PDF
+            pdfkit.from_string(rendered_html, pdf_output_path)
 
-    # Display the PDF as a download button
-    with open(pdf_output_path, 'rb') as pdf_file:
-        st.download_button("Download A5 PDF", data=pdf_file, file_name="cave_info_a5.pdf")
+            # Display the PDF as a download button
+            with open(pdf_output_path, 'rb') as pdf_file:
+                st.download_button("Download A4 PDF", data=pdf_file, file_name="cave_info_a4.pdf")
+        except Exception as e:
+            st.error(f"Error generating PDF: {e}")

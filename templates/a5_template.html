@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <style>
         @page {
-            size: A5;
+            size: A4;
             margin: 20mm;
         }
         body {
@@ -32,14 +32,24 @@
     <p>{{ overview }}</p>
     {% endif %}
 
+    {% if history %}
+    <h2>History</h2>
+    <p>{{ history }}</p>
+    {% endif %}
+
+    {% if location %}
+    <h2>Location</h2>
+    <p>{{ location }}</p>
+    {% endif %}
+
+    {% if access %}
+    <h2>Access Details</h2>
+    <p>{{ access }}</p>
+    {% endif %}
+
     {% if description %}
     <h2>Description</h2>
     <p>{{ description }}</p>
-    {% endif %}
-
-    {% if trip_suggestions %}
-    <h2>Trip Suggestions</h2>
-    <p>{{ trip_suggestions }}</p>
     {% endif %}
 
     {% if warnings %}
@@ -47,9 +57,10 @@
     <p>{{ warnings }}</p>
     {% endif %}
 
-    {% if access %}
-    <h2>Access Details</h2>
-    <p>{{ access }}</p>
+    {% if tackle %}
+    <h2>Tackle Information</h2>
+    <p>{{ tackle }}</p>
     {% endif %}
+
 </body>
 </html>
