@@ -4,74 +4,46 @@ import streamlit as st
 from src.csw_scraper import fetch_cave_info, CaveInfo  # Assuming CaveInfo is your dataclass
 
 # Streamlit app for scraping cave info
-st.title("Cave Info Scraper")
+st.set_page_config(layout="wide")  # Set wide layout for better visualization
 
-# Input field for URL
-url = st.text_input("Enter the Cave Info URL:", "")
+# Title of the app
+st.title("Cave Info Scraper")
 
 # Use session state to persist cave_info across interactions
 if "cave_info" not in st.session_state:
     st.session_state.cave_info = None
+    st.session_state.formatted_text = {}
 
-# Button to fetch cave info
-if st.button("Fetch Cave Info"):
-    if url:
-        # Fetch cave info from the provided URL
-        cave_info = fetch_cave_info(url)
+# Sidebar for inputs
+with st.sidebar:
+    # Input field for URL
+    url = st.text_input("Enter the Cave Info URL:", "")
 
-        if cave_info and cave_info.name:
-            st.session_state.cave_info = cave_info  # Store in session state
-            st.success(f"Successfully fetched data for: {cave_info.name}")
+    # Button to fetch cave info
+    if st.button("Fetch Cave Info"):
+        if url:
+            # Fetch cave info from the provided URL
+            cave_info = fetch_cave_info(url)
 
-            # Display cave info sections
-            st.header("Overview")
-            st.write(cave_info.overview or "No Overview available")
-
-            st.header("History")
-            st.write(cave_info.history or "No History available")
-
-            st.header("Location")
-            st.write(cave_info.location or "No Location available")
-
-            st.header("Access")
-            st.write(cave_info.access or "No Access details available")
-
-            st.header("Description")
-            st.write(cave_info.description or "No Description available")
-
-            st.header("Tackle")
-            st.write(cave_info.tackle or "No Tackle information available")
-
-            st.header("Video")
-            if cave_info.video:
-                st.markdown(f"[Watch Video]({cave_info.video})")
+            if cave_info and cave_info.name:
+                st.session_state.cave_info = cave_info  # Store in session state
+                st.session_state.formatted_text = {
+                    "overview": cave_info.overview,
+                    "history": cave_info.history,
+                    "location": cave_info.location,
+                    "access": cave_info.access,
+                    "description": cave_info.description,
+                    "warnings": cave_info.warnings,
+                    "tackle": cave_info.tackle,
+                }
+                st.success(f"Successfully fetched data for: {cave_info.name}")
             else:
-                st.write("No Video available")
-
-            st.header("References")
-            st.write(cave_info.references or "No References available")
-
-            st.header("Warnings")
-            st.write(cave_info.warnings or "No Warnings available")
-
-            st.header("Disclaimer")
-            st.write(cave_info.disclaimer or "No Disclaimer available")
+                st.error("Failed to fetch cave info. Please check the URL.")
         else:
-            st.error("Failed to fetch cave info. Please check the URL.")
-    else:
-        st.warning("Please enter a URL.")
-
-# Only show the next section if cave_info has been successfully fetched
-if st.session_state.cave_info:
-    cave_info = st.session_state.cave_info  # Retrieve from session state
-
-    # Set up the environment for Jinja2
-    env = Environment(loader=FileSystemLoader('templates'))
-    template = env.get_template('a4_template.html')
+            st.warning("Please enter a URL.")
 
     # User input for selecting sections
-    st.title("Cave Info A4 Formatter")
-
+    st.header("Select Sections to Include")
     sections_to_include = {
         'overview': st.checkbox('Include Overview', value=True),
         'history': st.checkbox('Include History', value=False),
@@ -82,16 +54,45 @@ if st.session_state.cave_info:
         'tackle': st.checkbox('Include Tackle', value=True),
     }
 
+    # Buttons for formatting options
+    if st.session_state.cave_info:
+        if st.button("AI Format Text"):
+            # Placeholder for AI formatting (can call an AI API or function here)
+            for key in st.session_state.formatted_text:
+                if sections_to_include.get(key, False):
+                    # Here you would replace this with the AI formatted text
+                    st.session_state.formatted_text[key] = f"**Formatted**: {st.session_state.formatted_text[key]}"
+
+        if st.button("Reset to Original Text"):
+            cave_info = st.session_state.cave_info
+            for key in st.session_state.formatted_text:
+                st.session_state.formatted_text[key] = getattr(cave_info, key)
+
+# Main content area
+if st.session_state.cave_info:
+    cave_info = st.session_state.cave_info  # Retrieve from session state
+
+    # Display selected sections
+    st.header(f"Preview: {cave_info.name}")
+    for section, include in sections_to_include.items():
+        if include and st.session_state.formatted_text.get(section):
+            st.subheader(section.capitalize())
+            st.write(st.session_state.formatted_text[section])
+
+    # Set up the environment for Jinja2
+    env = Environment(loader=FileSystemLoader('templates'))
+    template = env.get_template('a4_template.html')
+
     # Filter selected sections for Jinja2
     filtered_info = {
         'cave_name': cave_info.name,
-        'overview': cave_info.overview if sections_to_include['overview'] else '',
-        'history': cave_info.history if sections_to_include['history'] else '',
-        'location': cave_info.location if sections_to_include['location'] else '',
-        'access': cave_info.access if sections_to_include['access'] else '',
-        'description': cave_info.description if sections_to_include['description'] else '',
-        'warnings': cave_info.warnings if sections_to_include['warnings'] else '',
-        'tackle': cave_info.tackle if sections_to_include['tackle'] else '',
+        'overview': st.session_state.formatted_text['overview'] if sections_to_include['overview'] else '',
+        'history': st.session_state.formatted_text['history'] if sections_to_include['history'] else '',
+        'location': st.session_state.formatted_text['location'] if sections_to_include['location'] else '',
+        'access': st.session_state.formatted_text['access'] if sections_to_include['access'] else '',
+        'description': st.session_state.formatted_text['description'] if sections_to_include['description'] else '',
+        'warnings': st.session_state.formatted_text['warnings'] if sections_to_include['warnings'] else '',
+        'tackle': st.session_state.formatted_text['tackle'] if sections_to_include['tackle'] else '',
     }
 
     # Render the HTML content using Jinja2
