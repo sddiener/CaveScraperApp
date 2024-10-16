@@ -67,10 +67,10 @@ if st.session_state.cave_info:
 
     # Set up the environment for Jinja2
     env = Environment(loader=FileSystemLoader('templates'))
-    template = env.get_template('a5_template.html')
+    template = env.get_template('a4_template.html')
 
     # User input for selecting sections
-    st.title("Cave Info A5 Formatter")
+    st.title("Cave Info A4 Formatter")
 
     sections_to_include = {
         'overview': st.checkbox('Include Overview', value=True),
