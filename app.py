@@ -13,6 +13,7 @@ st.title("Cave Info Scraper")
 if "cave_info" not in st.session_state:
     st.session_state.cave_info = None
     st.session_state.formatted_text = {}
+    st.session_state.pdf_ready = False
 
 # Sidebar for inputs
 with st.sidebar:
@@ -37,25 +38,26 @@ with st.sidebar:
                     "tackle": cave_info.tackle,
                 }
                 st.success(f"Successfully fetched data for: {cave_info.name}")
+                st.session_state.pdf_ready = False
             else:
                 st.error("Failed to fetch cave info. Please check the URL.")
         else:
             st.warning("Please enter a URL.")
 
     # User input for selecting sections
-    st.header("Select Sections to Include")
-    sections_to_include = {
-        'overview': st.checkbox('Include Overview', value=True),
-        'history': st.checkbox('Include History', value=False),
-        'location': st.checkbox('Include Location', value=True),
-        'access': st.checkbox('Include Access Details', value=True),
-        'description': st.checkbox('Include Description', value=True),
-        'warnings': st.checkbox('Include Warnings', value=True),
-        'tackle': st.checkbox('Include Tackle', value=True),
-    }
-
-    # Buttons for formatting options
     if st.session_state.cave_info:
+        st.header("Select Sections to Include")
+        sections_to_include = {
+            'overview': st.checkbox('Include Overview', value=True),
+            'history': st.checkbox('Include History', value=False),
+            'location': st.checkbox('Include Location', value=True),
+            'access': st.checkbox('Include Access Details', value=True),
+            'description': st.checkbox('Include Description', value=True),
+            'warnings': st.checkbox('Include Warnings', value=True),
+            'tackle': st.checkbox('Include Tackle', value=True),
+        }
+
+        # Buttons for formatting options
         if st.button("AI Format Text"):
             # Placeholder for AI formatting (can call an AI API or function here)
             for key in st.session_state.formatted_text:
@@ -68,9 +70,50 @@ with st.sidebar:
             for key in st.session_state.formatted_text:
                 st.session_state.formatted_text[key] = getattr(cave_info, key)
 
-# Main content area
+        # Button to generate PDF
+        if st.button("Generate A4 PDF"):
+            try:
+                # Set up the environment for Jinja2
+                env = Environment(loader=FileSystemLoader('templates'))
+                template = env.get_template('a4_template.html')
+
+                # Retrieve cave_info from session state to generate the PDF
+                cave_info = st.session_state.cave_info
+
+                # Filter selected sections for Jinja2
+                filtered_info = {
+                    'cave_name': cave_info.name,
+                    'overview': st.session_state.formatted_text['overview'] if sections_to_include['overview'] else '',
+                    'history': st.session_state.formatted_text['history'] if sections_to_include['history'] else '',
+                    'location': st.session_state.formatted_text['location'] if sections_to_include['location'] else '',
+                    'access': st.session_state.formatted_text['access'] if sections_to_include['access'] else '',
+                    'description': st.session_state.formatted_text['description'] if sections_to_include['description'] else '',
+                    'warnings': st.session_state.formatted_text['warnings'] if sections_to_include['warnings'] else '',
+                    'tackle': st.session_state.formatted_text['tackle'] if sections_to_include['tackle'] else '',
+                }
+
+                # Render the HTML content using Jinja2
+                rendered_html = template.render(**filtered_info)
+
+                # Convert to PDF
+                pdf_output_path = "output.pdf"
+                pdfkit.from_string(rendered_html, pdf_output_path)
+
+                st.session_state.pdf_ready = True
+                st.success("PDF generated successfully!")
+
+            except Exception as e:
+                st.error(f"Error generating PDF: {e}")
+
+        # Provide download link for PDF if available
+        if st.session_state.pdf_ready:
+            with open("output.pdf", 'rb') as pdf_file:
+                st.download_button("Download A4 PDF", data=pdf_file, file_name="cave_info_a4.pdf")
+
+# Main content area for preview
 if st.session_state.cave_info:
-    cave_info = st.session_state.cave_info  # Retrieve from session state
+    # Retrieve cave_info from session state for preview
+    cave_info = st.session_state.cave_info
 
     # Display selected sections
     st.header(f"Preview: {cave_info.name}")
@@ -78,35 +121,3 @@ if st.session_state.cave_info:
         if include and st.session_state.formatted_text.get(section):
             st.subheader(section.capitalize())
             st.write(st.session_state.formatted_text[section])
-
-    # Set up the environment for Jinja2
-    env = Environment(loader=FileSystemLoader('templates'))
-    template = env.get_template('a4_template.html')
-
-    # Filter selected sections for Jinja2
-    filtered_info = {
-        'cave_name': cave_info.name,
-        'overview': st.session_state.formatted_text['overview'] if sections_to_include['overview'] else '',
-        'history': st.session_state.formatted_text['history'] if sections_to_include['history'] else '',
-        'location': st.session_state.formatted_text['location'] if sections_to_include['location'] else '',
-        'access': st.session_state.formatted_text['access'] if sections_to_include['access'] else '',
-        'description': st.session_state.formatted_text['description'] if sections_to_include['description'] else '',
-        'warnings': st.session_state.formatted_text['warnings'] if sections_to_include['warnings'] else '',
-        'tackle': st.session_state.formatted_text['tackle'] if sections_to_include['tackle'] else '',
-    }
-
-    # Render the HTML content using Jinja2
-    rendered_html = template.render(**filtered_info)
-
-    # Convert to PDF and provide download link
-    if st.button("Generate A4 PDF"):
-        try:
-            pdf_output_path = "output.pdf"
-            # Try generating the PDF
-            pdfkit.from_string(rendered_html, pdf_output_path)
-
-            # Display the PDF as a download button
-            with open(pdf_output_path, 'rb') as pdf_file:
-                st.download_button("Download A4 PDF", data=pdf_file, file_name="cave_info_a4.pdf")
-        except Exception as e:
-            st.error(f"Error generating PDF: {e}")
