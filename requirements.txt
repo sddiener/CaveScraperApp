@@ -6,7 +6,6 @@ black==24.10.0
 blinker==1.8.2
 bs4==0.0.2
 cachetools==5.5.0
--e git+ssh://git@github.com/sddiener/CaveScraperApp.git@f2fb301404926ddb8135f6fd1df926d51269949a#egg=CaveScraperApp
 certifi==2024.8.30
 cfgv==3.4.0
 charset-normalizer==3.4.0
